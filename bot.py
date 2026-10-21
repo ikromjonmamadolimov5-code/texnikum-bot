@@ -161,8 +161,75 @@ async def web_dashboard(request):
 
     cards_html = ""
     for r in rows:
+        tuman = r[4] if r[4] else ""
+        texnikum = r[0] if r[0] else ""
+        fio = r[1] if r[1] else ""
+        xolati = r[5] if r[5] else ""
+        lavozim = r[2] if r[2] else ""
+        phone = r[3] if r[3] and r[3] != 'nan' and r[3] != '' else 'Kiritilmagan'
+        
         cards_html += f"""
         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-3">
-            <div class="text-xs font-semibold text-blue-600 mb-1">{r[4]}</div>
-            <div class="font-bold text-gray-800 text-sm mb-1">{r[0]}</div>
-            <div class="text-gray-700 text-sm font-medium">👤 {r[1]} <span class="text
+            <div class="text-xs font-semibold text-blue-600 mb-1">{tuman}</div>
+            <div class="font-bold text-gray-800 text-sm mb-1">{texnikum}</div>
+            <div class="text-gray-700 text-sm font-medium">👤 {fio} <span class="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600">({xolati})</span></div>
+            <div class="text-gray-500 text-xs mt-1">📌 {lavozim}</div>
+            <div class="mt-2 text-xs text-blue-500 font-semibold">📞 {phone}</div>
+        </div>
+        """
+
+    html = f"""<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farg'ona Texnikum HR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" href="https://img.icons8.com/color/96/administrator-male.png">
+</head>
+<body class="bg-gray-50 p-4 max-w-md mx-auto">
+    <div class="text-center my-4">
+        <h1 class="text-lg font-bold text-gray-800">Farg'ona Texnikum Boshqarmasi</h1>
+        <p class="text-xs text-gray-500">Rahbar kadrlar elektron paneli (Dashboard)</p>
+    </div>
+    <div class="mb-4">
+        <input type="text" id="search" placeholder="Texnikum yoki F.I.Sh bo'yicha qidirish..." class="w-full p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
+    </div>
+    <div id="list">
+        {cards_html}
+    </div>
+    <script>
+        document.getElementById('search').addEventListener('input', function(e) {{
+            let val = e.target.value.toLowerCase();
+            let cards = document.querySelectorAll('#list > div');
+            cards.forEach(card => {{
+                let text = card.innerText.toLowerCase();
+                card.style.display = text.includes(val) ? 'block' : 'none';
+            }});
+        }});
+    </script>
+</body>
+</html>"""
+    return web.Response(text=html, content_type='text/html')
+
+async def start_web():
+    app = web.Application()
+    app.router.add.get('/', web_dashboard)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    
+    port = int(os.environ.get("PORT", 8080))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"🌐 Veb Dashboard {port}-portda ishga tushdi!")
+
+async def main():
+    setup_database()
+    web_task = asyncio.create_task(start_web())
+    polling_task = asyncio.create_task(dp.start_polling(bot))
+    await asyncio.gather(web_task, polling_task)
+
+if __name__ == "__main__":
+    asyncio.run(main())
