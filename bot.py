@@ -9,7 +9,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiohttp import web
 
-# Telegram Bot Tokeningizni kiriting
+# Telegram Bot Tokeningizni shu yerga yozing
 API_TOKEN = "8786802772:AAHSvzLvgCQLXt7aCl2Wk1PZj0Rg0H8uA9Q"
 
 logging.basicConfig(level=logging.INFO)
@@ -152,11 +152,11 @@ async def search_handler(message: types.Message):
         res += f"🏫 **{r[0]}** ({r[4]})\n👤 **{r[1]}**\n📌 {r[2]}\n📞 Tel: {phone_str}\n---------------\n"
     await message.answer(res, parse_mode="Markdown")
 
-# --- WEB DASHBOARD SERVER ---
+# --- WEB DASHBOARD SERVER (EXECUTIVE UI) ---
 async def web_dashboard(request):
     conn = sqlite3.connect("texnikumlar_baza.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT tr, texnikum_nomi, fio, xolati, lavozim, viloyat, tuman, phone FROM xodimlar")
+    cursor.execute("SELECT tr, texnikum_nomi, fio, xolati, lavozim, viloyat, tuman, phone, kocha FROM xodimlar")
     rows = cursor.fetchall()
     conn.close()
 
@@ -164,12 +164,13 @@ async def web_dashboard(request):
     for r in rows:
         js_leaders.append({
             "id": r[0],
-            "texnikum_nomi": str(r[1]),
+            "texnikum": str(r[1]),
             "fio": str(r[2]),
-            "xolati": str(r[3]) if r[3] else "Doimiy",
-            "lavozim": str(r[4]),
-            "tuman": str(r[6]),
-            "phone": str(r[7]) if r[7] and r[7] != 'nan' else ""
+            "status": str(r[3]) if r[3] else "Doimiy",
+            "role": str(r[4]),
+            "tuman": str(r[6]) if r[6] else "Farg'ona",
+            "phone": str(r[7]) if r[7] and r[7] != 'nan' else "",
+            "address": str(r[8]) if r[8] and r[8] != 'nan' else "Farg'ona viloyati"
         })
 
     leaders_json = json.dumps(js_leaders, ensure_ascii=False)
@@ -220,7 +221,7 @@ async def web_dashboard(request):
             </div>
         </div>
 
-        <!-- App Bar -->
+        <!-- Header -->
         <header class="bg-slate-900 text-white px-5 py-3.5 flex justify-between items-center shrink-0 shadow-md z-40 border-b border-slate-800">
             <div class="flex items-center space-x-3">
                 <div class="relative">
@@ -234,7 +235,6 @@ async def web_dashboard(request):
                     <h1 class="text-base font-bold tracking-tight text-white mt-0.5">Farg'ona Viloyati</h1>
                 </div>
             </div>
-            
             <div class="flex items-center space-x-1">
                 <button onclick="toggleDarkMode()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-gray-300 transition-colors">
                     <i id="theme-icon" class="fa-solid fa-moon text-sm"></i>
@@ -242,7 +242,7 @@ async def web_dashboard(request):
             </div>
         </header>
 
-        <!-- Main Content Area -->
+        <!-- Content Body -->
         <div id="main-content" class="flex-1 overflow-y-auto scroll-hide p-4 space-y-4 pb-20">
 
             <!-- TAB 1: DASHBOARD -->
@@ -253,7 +253,7 @@ async def web_dashboard(request):
                         <span class="text-[11px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 font-medium">Jonli holat</span>
                     </div>
                     <h2 class="text-lg font-bold">Kasbiy Ta'lim Rahbariyat Tizimi</h2>
-                    <p class="text-xs text-slate-300 mt-1">Farg'ona viloyatidagi <b class="text-white">67 ta texnikum</b> va <b class="text-white">268 nafar rahbar</b> kadrlar bazasi.</p>
+                    <p class="text-xs text-slate-300 mt-1">Farg'ona viloyatidagi <b class="text-white">67 ta texnikum</b> va <b class="text-white" id="header-total-count">268 nafar rahbar</b> kadrlar bazasi.</p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
@@ -317,7 +317,7 @@ async def web_dashboard(request):
             <div id="view-hisobot" class="hidden space-y-4">
                 <div class="bg-white dark:bg-m3-cardDark rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
                     <h3 class="text-sm font-bold text-gray-900 dark:text-white">Rasmiy Hisobotlar</h3>
-                    <p class="text-xs text-gray-500">Baza ma'lumotlari to'liq sinxronlangan.</p>
+                    <p class="text-xs text-gray-500">Excel bazasi to'liq sinxronlangan.</p>
                 </div>
             </div>
 
@@ -344,21 +344,22 @@ async def web_dashboard(request):
         </nav>
     </div>
 
-    <!-- Frontend Script Logic -->
+    <!-- Script Logic -->
     <script>
         const LEADERS_DATA = {leaders_json};
         let currentFilteredData = [...LEADERS_DATA];
 
         document.addEventListener("DOMContentLoaded", () => {{
             document.getElementById('stat-total-kadrs').innerText = LEADERS_DATA.length;
+            document.getElementById('header-total-count').innerText = LEADERS_DATA.length + " nafar rahbar";
             renderLeadersList(LEADERS_DATA);
             initCharts();
         }});
 
         function switchTab(tabName) {{
             ['dashboard', 'kadrlar', 'analitika', 'hisobot'].forEach(tab => {{
-                document.getElementById(`view-${tab}`).classList.toggle('hidden', tab !== tabName);
-                document.getElementById(`nav-${tab}`).className = tab === tabName ? 
+                document.getElementById(`view-${{tab}}`).classList.toggle('hidden', tab !== tabName);
+                document.getElementById(`nav-${{tab}}`).className = tab === tabName ? 
                     "nav-btn flex flex-col items-center space-y-1 text-brand-600 dark:text-brand-400 font-bold" : 
                     "nav-btn flex flex-col items-center space-y-1 text-gray-400 font-medium";
             }});
@@ -386,12 +387,12 @@ async def web_dashboard(request):
                         <div>
                             <span class="text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase">${{item.tuman}} tumani</span>
                             <h4 class="text-sm font-bold text-gray-900 dark:text-white mt-0.5">${{item.fio}}</h4>
-                            <div class="text-xs text-gray-500">${{item.lavozim}}</div>
+                            <div class="text-xs text-gray-500">${{item.role}}</div>
                         </div>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600">${{item.xolati}}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600">${{item.status}}</span>
                     </div>
-                    <div class="text-xs text-gray-600 dark:text-gray-300 font-medium">🏫 ${{item.texnikum_nomi}}</div>
-                    ${{item.phone ? `<a href="tel:${{item.phone}}" class="block text-xs text-blue-500 font-semibold mt-1">📞 ${{item.phone}}</a>` : ''}}
+                    <div class="text-xs text-gray-600 dark:text-gray-300 font-medium">🏫 ${{item.texnikum}}</div>
+                    ${{item.phone ? `<a href="tel:${{item.phone}}" class="block text-xs text-blue-500 font-semibold mt-1">📞 ${{item.phone}}</a>` : '<span class="block text-xs text-gray-400 mt-1">Telefon kiritilmagan</span>'}}
                 </div>
             `).join('');
         }}
@@ -402,9 +403,9 @@ async def web_dashboard(request):
             const role = document.getElementById('filter-role').value;
 
             currentFilteredData = LEADERS_DATA.filter(i => {{
-                const matchQ = i.fio.toLowerCase().includes(q) || i.texnikum_nomi.toLowerCase().includes(q) || i.tuman.toLowerCase().includes(q);
-                const matchS = status === 'all' || i.xolati.toLowerCase().includes(status.toLowerCase());
-                const matchR = role === 'all' || i.lavozim.toLowerCase().includes(role.toLowerCase());
+                const matchQ = i.fio.toLowerCase().includes(q) || i.texnikum.toLowerCase().includes(q) || i.tuman.toLowerCase().includes(q);
+                const matchS = status === 'all' || i.status.toLowerCase().includes(status.toLowerCase());
+                const matchR = role === 'all' || i.role.toLowerCase().includes(role.toLowerCase());
                 return matchQ && matchS && matchR;
             }});
             renderLeadersList(currentFilteredData);
@@ -424,7 +425,7 @@ async def web_dashboard(request):
                 type: 'doughnut',
                 data: {{
                     labels: ['Doimiy', 'Vaqtincha', 'Vakant'],
-                    datasets: [{{ data: [218, 28, 22], backgroundColor: ['#10B981', '#F59E0B', '#EF4444'] }}]
+                    datasets: [{{ data: [218, 28, 22], backgroundColor: ['#10B981', '#F59E0B', '#EF4444'] }]
                 }},
                 options: {{ responsive: true, maintainAspectRatio: false }}
             }});
