@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import sqlite3
+import json
 import pandas as pd
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
@@ -151,7 +152,7 @@ async def search_handler(message: types.Message):
         res += f"🏫 **{r[0]}** ({r[4]})\n👤 **{r[1]}**\n📌 {r[2]}\n📞 Tel: {phone_str}\n---------------\n"
     await message.answer(res, parse_mode="Markdown")
 
-# --- WEB DASHBOARD SERVER (PROFESSIONAL TABLET/MOBILE UI) ---
+# --- WEB DASHBOARD SERVER ---
 async def web_dashboard(request):
     conn = sqlite3.connect("texnikumlar_baza.db")
     cursor = conn.cursor()
@@ -159,7 +160,6 @@ async def web_dashboard(request):
     rows = cursor.fetchall()
     conn.close()
 
-    # Bazadan kelgan xodimlarni JavaScript massiviga o'tkazamiz
     js_leaders = []
     for r in rows:
         js_leaders.append({
@@ -172,7 +172,6 @@ async def web_dashboard(request):
             "phone": str(r[7]) if r[7] and r[7] != 'nan' else ""
         })
 
-    import json
     leaders_json = json.dumps(js_leaders, ensure_ascii=False)
 
     html = f"""<!DOCTYPE html>
@@ -350,86 +349,86 @@ async def web_dashboard(request):
         const LEADERS_DATA = {leaders_json};
         let currentFilteredData = [...LEADERS_DATA];
 
-        document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", () => {{
             document.getElementById('stat-total-kadrs').innerText = LEADERS_DATA.length;
             renderLeadersList(LEADERS_DATA);
             initCharts();
-        });
+        }});
 
-        function switchTab(tabName) {
-            ['dashboard', 'kadrlar', 'analitika', 'hisobot'].forEach(tab => {
+        function switchTab(tabName) {{
+            ['dashboard', 'kadrlar', 'analitika', 'hisobot'].forEach(tab => {{
                 document.getElementById(`view-${tab}`).classList.toggle('hidden', tab !== tabName);
                 document.getElementById(`nav-${tab}`).className = tab === tabName ? 
                     "nav-btn flex flex-col items-center space-y-1 text-brand-600 dark:text-brand-400 font-bold" : 
                     "nav-btn flex flex-col items-center space-y-1 text-gray-400 font-medium";
-            });
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+            }});
+            window.scrollTo({{ top: 0, behavior: 'smooth' }});
+        }}
 
-        function toggleDarkMode() {
+        function toggleDarkMode() {{
             const html = document.documentElement;
             const isDark = html.classList.toggle('dark');
             document.getElementById('theme-icon').className = isDark ? 'fa-solid fa-sun text-sm text-amber-400' : 'fa-solid fa-moon text-sm';
-        }
+        }}
 
-        function renderLeadersList(data) {
+        function renderLeadersList(data) {{
             const container = document.getElementById('leaders-container');
-            document.getElementById('results-count').innerText = `Topilgan kadrlar: ${data.length} nafar`;
+            document.getElementById('results-count').innerText = `Topilgan kadrlar: ${{data.length}} nafar`;
 
-            if (data.length === 0) {
+            if (data.length === 0) {{
                 container.innerHTML = `<div class="text-center py-10 text-gray-500 text-xs">Ma'lumot topilmadi</div>`;
                 return;
-            }
+            }}
 
             container.innerHTML = data.map(item => `
                 <div class="bg-white dark:bg-m3-cardDark rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 space-y-2">
                     <div class="flex justify-between items-start">
                         <div>
-                            <span class="text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase">${item.tuman} tumani</span>
-                            <h4 class="text-sm font-bold text-gray-900 dark:text-white mt-0.5">${item.fio}</h4>
-                            <div class="text-xs text-gray-500">${item.lavozim}</div>
+                            <span class="text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase">${{item.tuman}} tumani</span>
+                            <h4 class="text-sm font-bold text-gray-900 dark:text-white mt-0.5">${{item.fio}}</h4>
+                            <div class="text-xs text-gray-500">${{item.lavozim}}</div>
                         </div>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600">${item.xolati}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600">${{item.xolati}}</span>
                     </div>
-                    <div class="text-xs text-gray-600 dark:text-gray-300 font-medium">🏫 ${item.texnikum_nomi}</div>
-                    ${item.phone ? `<a href="tel:{item.phone}" class="block text-xs text-blue-500 font-semibold mt-1">📞 {item.phone}</a>` : ''}
+                    <div class="text-xs text-gray-600 dark:text-gray-300 font-medium">🏫 ${{item.texnikum_nomi}}</div>
+                    ${{item.phone ? `<a href="tel:${{item.phone}}" class="block text-xs text-blue-500 font-semibold mt-1">📞 ${{item.phone}}</a>` : ''}}
                 </div>
             `).join('');
-        }
+        }}
 
-        function applyFilters() {
+        function applyFilters() {{
             const q = document.getElementById('kadrlar-search').value.toLowerCase();
             const status = document.getElementById('filter-status').value;
             const role = document.getElementById('filter-role').value;
 
-            currentFilteredData = LEADERS_DATA.filter(i => {
+            currentFilteredData = LEADERS_DATA.filter(i => {{
                 const matchQ = i.fio.toLowerCase().includes(q) || i.texnikum_nomi.toLowerCase().includes(q) || i.tuman.toLowerCase().includes(q);
                 const matchS = status === 'all' || i.xolati.toLowerCase().includes(status.toLowerCase());
                 const matchR = role === 'all' || i.lavozim.toLowerCase().includes(role.toLowerCase());
                 return matchQ && matchS && matchR;
-            });
+            }});
             renderLeadersList(currentFilteredData);
-        }
+        }}
 
-        function initCharts() {
-            new Chart(document.getElementById('roleStatusChart').getContext('2d'), {
+        function initCharts() {{
+            new Chart(document.getElementById('roleStatusChart').getContext('2d'), {{
                 type: 'bar',
-                data: {
+                data: {{
                     labels: ['Direktor', 'O\'quv', 'Yoshlar', 'Ishlab chiqarish'],
-                    datasets: [{ label: 'Soni', data: [67, 67, 67, 67], backgroundColor: '#0284c7' }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+                    datasets: [{{ label: 'Soni', data: [67, 67, 67, 67], backgroundColor: '#0284c7' }}]
+                }},
+                options: {{ responsive: true, maintainAspectRatio: false }}
+            }});
 
-            new Chart(document.getElementById('statusDoughnutChart').getContext('2d'), {
+            new Chart(document.getElementById('statusDoughnutChart').getContext('2d'), {{
                 type: 'doughnut',
-                data: {
+                data: {{
                     labels: ['Doimiy', 'Vaqtincha', 'Vakant'],
-                    datasets: [{ data: [218, 28, 22], backgroundColor: ['#10B981', '#F59E0B', '#EF4444'] }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
+                    datasets: [{{ data: [218, 28, 22], backgroundColor: ['#10B981', '#F59E0B', '#EF4444'] }}]
+                }},
+                options: {{ responsive: true, maintainAspectRatio: false }}
+            }});
+        }}
     </script>
 </body>
 </html>"""
