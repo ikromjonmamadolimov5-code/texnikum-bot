@@ -216,7 +216,8 @@ async def web_dashboard(request):
 
 async def start_web():
     app = web.Application()
-    app.router.add.get('/', web_dashboard)
+    # To'g'rilangan joyi: add_get ishlatildi
+    app.router.add_get('/', web_dashboard)
     runner = web.AppRunner(app)
     await runner.setup()
     
