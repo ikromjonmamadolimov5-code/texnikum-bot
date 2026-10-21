@@ -151,129 +151,285 @@ async def search_handler(message: types.Message):
         res += f"🏫 **{r[0]}** ({r[4]})\n👤 **{r[1]}**\n📌 {r[2]}\n📞 Tel: {phone_str}\n---------------\n"
     await message.answer(res, parse_mode="Markdown")
 
-# --- WEB DASHBOARD SERVER (TELEFON ILOVA UCHUN) ---
+# --- WEB DASHBOARD SERVER (PROFESSIONAL TABLET/MOBILE UI) ---
 async def web_dashboard(request):
     conn = sqlite3.connect("texnikumlar_baza.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT texnikum_nomi, fio, lavozim, phone, tuman, xolati FROM xodimlar")
+    cursor.execute("SELECT tr, texnikum_nomi, fio, xolati, lavozim, viloyat, tuman, phone FROM xodimlar")
     rows = cursor.fetchall()
-    
-    total_kadrlar = len(rows)
-    doimiy = sum(1 for r in rows if not r[5] or 'doimiy' in str(r[5]).lower())
-    vakant = sum(1 for r in rows if 'vk' in str(r[5]).lower() or 'v' in str(r[5]).lower() or 'vakant' in str(r[1]).lower())
-    
     conn.close()
 
-    cards_html = ""
+    # Bazadan kelgan xodimlarni JavaScript massiviga o'tkazamiz
+    js_leaders = []
     for r in rows:
-        tuman = r[4] if r[4] else ""
-        texnikum = r[0] if r[0] else ""
-        fio = r[1] if r[1] else ""
-        xolati = r[5] if r[5] else "Doimiy"
-        lavozim = r[2] if r[2] else ""
-        phone = r[3] if r[3] and r[3] != 'nan' and r[3] != '' else 'Kiritilmagan'
-        
-        cards_html += f"""
-        <div class="bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-700 mb-3 hover:border-slate-600 transition">
-            <div class="flex justify-between items-center mb-1">
-                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md">{tuman}</span>
-                <span class="text-[11px] font-medium text-slate-400 bg-slate-700 px-2 py-0.5 rounded-md">{xolati}</span>
-            </div>
-            <div class="font-bold text-white text-sm mb-1">{texnikum}</div>
-            <div class="text-slate-200 text-sm font-semibold flex items-center gap-1.5 mt-1">
-                <span>👤</span> {fio}
-            </div>
-            <div class="text-slate-400 text-xs mt-1">📌 {lavozim}</div>
-            <div class="mt-3 pt-2 border-t border-slate-700/50 flex justify-between items-center text-xs">
-                <span class="text-slate-400">Telefon:</span>
-                <a href="tel:{phone}" class="text-blue-400 font-bold bg-blue-500/10 px-2.5 py-1 rounded-lg">📞 {phone}</a>
-            </div>
-        </div>
-        """
+        js_leaders.append({
+            "id": r[0],
+            "texnikum_nomi": str(r[1]),
+            "fio": str(r[2]),
+            "xolati": str(r[3]) if r[3] else "Doimiy",
+            "lavozim": str(r[4]),
+            "tuman": str(r[6]),
+            "phone": str(r[7]) if r[7] and r[7] != 'nan' else ""
+        })
+
+    import json
+    leaders_json = json.dumps(js_leaders, ensure_ascii=False)
 
     html = f"""<!DOCTYPE html>
-<html lang="uz">
+<html lang="uz" class="h-full light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Farg'ona Texnikum HR - Nazorat Paneli</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Boshqarma Boshlig'i Dashboard - Farg'ona Kasbiy Ta'lim</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <link rel="icon" href="https://img.icons8.com/color/96/administrator-male.png">
+    <script>
+        tailwind.config = {{
+            darkMode: 'class',
+            theme: {{
+                extend: {{
+                    colors: {{
+                        brand: {{ 50: '#f0f7ff', 100: '#e0effe', 500: '#0284c7', 600: '#0369a1', 700: '#075985', 800: '#0c4a6e', 900: '#0c3a57' }},
+                        m3: {{ surfaceLight: '#F8F9FE', surfaceDark: '#111318', cardLight: '#FFFFFF', cardDark: '#1D2026', accent: '#1063FD' }}
+                    }}
+                }}
+            }}
+        }}
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {{ user-select: none; -webkit-user-select: none; touch-action: manipulation; font-family: 'Inter', sans-serif; }}
+        .scroll-hide::-webkit-scrollbar {{ display: none; }}
+        .scroll-hide {{ -ms-overflow-style: none; scrollbar-width: none; }}
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 p-3 max-w-md mx-auto font-sans">
-    
-    <!-- HEADER -->
-    <div class="flex justify-between items-center bg-slate-800 p-4 rounded-2xl shadow-lg mb-4 border border-slate-700">
-        <div class="flex items-center gap-3">
-            <div class="bg-blue-600 p-2.5 rounded-xl shadow-md text-white font-bold">👨‍💼</div>
-            <div>
-                <div class="text-[10px] tracking-wider uppercase text-blue-400 font-bold">Boshqarma Boshlig'i</div>
-                <div class="text-base font-bold text-white">Farg'ona Viloyati</div>
+<body class="bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100 min-h-screen flex justify-center items-center p-0 sm:p-4">
+
+    <div class="w-full max-w-md sm:max-w-lg md:max-w-xl h-screen sm:h-[915px] sm:rounded-[40px] bg-m3-surfaceLight dark:bg-m3-surfaceDark shadow-2xl overflow-hidden flex flex-col relative border-0 sm:border-8 sm:border-gray-800 dark:sm:border-gray-700">
+        
+        <!-- Status Bar -->
+        <div class="w-full bg-slate-900 text-white px-6 pt-2 pb-1.5 flex justify-between items-center text-xs font-semibold tracking-wider z-50 shrink-0">
+            <span id="current-time">09:41</span>
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-wifi text-[11px]"></i>
+                <i class="fa-solid fa-signal text-[11px]"></i>
+                <div class="flex items-center space-x-0.5">
+                    <span class="text-[10px]">98%</span>
+                    <i class="fa-solid fa-battery-full text-xs text-emerald-400"></i>
+                </div>
             </div>
         </div>
-        <div class="flex gap-2">
-            <div class="bg-slate-700 p-2 rounded-xl text-slate-300">🌙</div>
-            <div class="bg-slate-700 p-2 rounded-xl text-slate-300">🔔</div>
+
+        <!-- App Bar -->
+        <header class="bg-slate-900 text-white px-5 py-3.5 flex justify-between items-center shrink-0 shadow-md z-40 border-b border-slate-800">
+            <div class="flex items-center space-x-3">
+                <div class="relative">
+                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-600 to-blue-400 flex items-center justify-center font-bold text-white shadow-lg text-lg border-2 border-white/20">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900"></span>
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase tracking-wider font-extrabold bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full border border-blue-400/30">Boshqarma Boshlig'i</span>
+                    <h1 class="text-base font-bold tracking-tight text-white mt-0.5">Farg'ona Viloyati</h1>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-1">
+                <button onclick="toggleDarkMode()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-gray-300 transition-colors">
+                    <i id="theme-icon" class="fa-solid fa-moon text-sm"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <div id="main-content" class="flex-1 overflow-y-auto scroll-hide p-4 space-y-4 pb-20">
+
+            <!-- TAB 1: DASHBOARD -->
+            <div id="view-dashboard" class="space-y-4">
+                <div class="bg-gradient-to-r from-slate-900 via-brand-900 to-slate-900 text-white rounded-2xl p-4 shadow-lg border border-blue-500/20">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs text-blue-300 font-semibold uppercase tracking-wider"><i class="fa-solid fa-chart-line mr-1"></i> Nazorat Paneli</span>
+                        <span class="text-[11px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-400/30 font-medium">Jonli holat</span>
+                    </div>
+                    <h2 class="text-lg font-bold">Kasbiy Ta'lim Rahbariyat Tizimi</h2>
+                    <p class="text-xs text-slate-300 mt-1">Farg'ona viloyatidagi <b class="text-white">67 ta texnikum</b> va <b class="text-white">268 nafar rahbar</b> kadrlar bazasi.</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div onclick="switchTab('kadrlar');" class="bg-white dark:bg-m3-cardDark p-3.5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 cursor-pointer">
+                        <div class="text-2xl font-extrabold text-gray-900 dark:text-white">67</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">Jami Texnikumlar</div>
+                    </div>
+                    <div onclick="switchTab('kadrlar');" class="bg-white dark:bg-m3-cardDark p-3.5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 cursor-pointer">
+                        <div class="text-2xl font-extrabold text-gray-900 dark:text-white" id="stat-total-kadrs">268</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">Jami Rahbarlar</div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-m3-cardDark rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white">Lavozimlar Kesimida Holat</h3>
+                    <div class="relative h-52">
+                        <canvas id="roleStatusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: KADRLAR DIRECTORY -->
+            <div id="view-kadrlar" class="hidden space-y-3">
+                <div class="bg-white dark:bg-m3-cardDark rounded-2xl p-3.5 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3 sticky top-0 z-30">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <input type="text" id="kadrlar-search" oninput="applyFilters()" placeholder="F.I.Sh, Texnikum yoki Tuman bo'yicha..." 
+                            class="w-full pl-9 pr-4 py-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-xs border-0 text-gray-900 dark:text-gray-100 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="filter-status" onchange="applyFilters()" class="py-2 px-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-xs text-gray-800 dark:text-gray-200 outline-none">
+                            <option value="all">Barcha Holatlar</option>
+                            <option value="Doimiy">Doimiy</option>
+                            <option value="v.v.b">Vaqtincha</option>
+                            <option value="vk">Vakant</option>
+                        </select>
+                        <select id="filter-role" onchange="applyFilters()" class="py-2 px-2.5 bg-gray-100 dark:bg-gray-800 rounded-xl text-xs text-gray-800 dark:text-gray-200 outline-none">
+                            <option value="all">Barcha Lavozimlar</option>
+                            <option value="Direktor">Direktorlar</option>
+                            <option value="o'quv">O'quv o'rinbosarlari</option>
+                            <option value="yoshlar">Yoshlar o'rinbosarlari</option>
+                            <option value="ishlab chiqarish">Ishlab chiqarish</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500 px-1" id="results-count">Natijalar yuklanmoqda...</div>
+                <div id="leaders-container" class="space-y-3"></div>
+            </div>
+
+            <!-- TAB 3: ANALYTICS -->
+            <div id="view-analitika" class="hidden space-y-4">
+                <div class="bg-white dark:bg-m3-cardDark rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white">Shtat Birliklari Nisbati</h3>
+                    <div class="relative h-56 flex justify-center">
+                        <canvas id="statusDoughnutChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: REPORTS -->
+            <div id="view-hisobot" class="hidden space-y-4">
+                <div class="bg-white dark:bg-m3-cardDark rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
+                    <h3 class="text-sm font-bold text-gray-900 dark:text-white">Rasmiy Hisobotlar</h3>
+                    <p class="text-xs text-gray-500">Baza ma'lumotlari to'liq sinxronlangan.</p>
+                </div>
+            </div>
+
         </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 px-3 py-2 flex justify-around items-center shrink-0 z-50">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn flex flex-col items-center space-y-1 text-brand-600 dark:text-brand-400 font-bold">
+                <i class="fa-solid fa-chart-line text-lg"></i>
+                <span class="text-[10px]">Bosh sahifa</span>
+            </button>
+            <button onclick="switchTab('kadrlar')" id="nav-kadrlar" class="nav-btn flex flex-col items-center space-y-1 text-gray-400 font-medium">
+                <i class="fa-solid fa-id-card-clip text-lg"></i>
+                <span class="text-[10px]">Kadrlar</span>
+            </button>
+            <button onclick="switchTab('analitika')" id="nav-analitika" class="nav-btn flex flex-col items-center space-y-1 text-gray-400 font-medium">
+                <i class="fa-solid fa-chart-pie text-lg"></i>
+                <span class="text-[10px]">Analitika</span>
+            </button>
+            <button onclick="switchTab('hisobot')" id="nav-hisobot" class="nav-btn flex flex-col items-center space-y-1 text-gray-400 font-medium">
+                <i class="fa-solid fa-folder-open text-lg"></i>
+                <span class="text-[10px]">Hisobotlar</span>
+            </button>
+        </nav>
     </div>
 
-    <!-- HERO CARD -->
-    <div class="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 p-5 rounded-2xl shadow-xl mb-4 relative overflow-hidden">
-        <div class="flex justify-between items-center mb-2">
-            <span class="text-xs font-semibold text-blue-400 tracking-wide uppercase">📊 Nazorat Paneli</span>
-            <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Jonli holat
-            </span>
-        </div>
-        <h2 class="text-lg font-bold text-white mb-1">Kasbiy Ta'lim Rahbariyat Tizimi</h2>
-        <p class="text-xs text-slate-400 leading-relaxed">Farg'ona viloyatidagi <strong class="text-white">67 ta texnikum</strong> va <strong class="text-white">{total_kadrlar} nafar rahbar</strong> kadrlar bo'yicha tezkor svod va analitika.</p>
-    </div>
-
-    <!-- STATS GRID -->
-    <div class="grid grid-cols-2 gap-3 mb-4">
-        <div class="bg-slate-800 border border-slate-700/60 p-4 rounded-2xl shadow-sm">
-            <div class="text-xs text-slate-400 mb-1">Jami Texnikumlar</div>
-            <div class="text-2xl font-black text-white">67</div>
-            <div class="text-[10px] text-emerald-400 font-semibold mt-1">100% qamrov</div>
-        </div>
-        <div class="bg-slate-800 border border-slate-700/60 p-4 rounded-2xl shadow-sm">
-            <div class="text-xs text-slate-400 mb-1">Jami Rahbar Kadrlar</div>
-            <div class="text-2xl font-black text-white">{total_kadrlar}</div>
-            <div class="text-[10px] text-blue-400 font-semibold mt-1">4 shtat / texnikum</div>
-        </div>
-        <div class="bg-slate-800 border border-slate-700/60 p-4 rounded-2xl shadow-sm">
-            <div class="text-xs text-slate-400 mb-1">Doimiy Tayinlangan</div>
-            <div class="text-2xl font-black text-emerald-400">{doimiy}</div>
-            <div class="text-[10px] text-slate-400 font-semibold mt-1">Asosiy tarkib</div>
-        </div>
-        <div class="bg-slate-800 border border-slate-700/60 p-4 rounded-2xl shadow-sm border-l-4 border-l-rose-500">
-            <div class="text-xs text-slate-400 mb-1">Vakant O'rinlar</div>
-            <div class="text-2xl font-black text-rose-400">{vakant}</div>
-            <div class="text-[10px] text-rose-400/80 font-semibold mt-1">Bo'sh o'rinlar</div>
-        </div>
-    </div>
-
-    <!-- SEARCH INPUT -->
-    <div class="mb-4">
-        <input type="text" id="search" placeholder="🔍 Texnikum yoki F.I.Sh bo'yicha qidirish..." class="w-full p-3.5 rounded-xl bg-slate-800 border border-slate-700 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 shadow-inner">
-    </div>
-
-    <!-- LIST OF CARDS -->
-    <div id="list">
-        {cards_html}
-    </div>
-
+    <!-- Frontend Script Logic -->
     <script>
-        document.getElementById('search').addEventListener('input', function(e) {{
-            let val = e.target.value.toLowerCase();
-            let cards = document.querySelectorAll('#list > div');
-            cards.forEach(card => {{
-                let text = card.innerText.toLowerCase();
-                card.style.display = text.includes(val) ? 'block' : 'none';
-            }});
-        }});
+        const LEADERS_DATA = {leaders_json};
+        let currentFilteredData = [...LEADERS_DATA];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('stat-total-kadrs').innerText = LEADERS_DATA.length;
+            renderLeadersList(LEADERS_DATA);
+            initCharts();
+        });
+
+        function switchTab(tabName) {
+            ['dashboard', 'kadrlar', 'analitika', 'hisobot'].forEach(tab => {
+                document.getElementById(`view-${tab}`).classList.toggle('hidden', tab !== tabName);
+                document.getElementById(`nav-${tab}`).className = tab === tabName ? 
+                    "nav-btn flex flex-col items-center space-y-1 text-brand-600 dark:text-brand-400 font-bold" : 
+                    "nav-btn flex flex-col items-center space-y-1 text-gray-400 font-medium";
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const isDark = html.classList.toggle('dark');
+            document.getElementById('theme-icon').className = isDark ? 'fa-solid fa-sun text-sm text-amber-400' : 'fa-solid fa-moon text-sm';
+        }
+
+        function renderLeadersList(data) {
+            const container = document.getElementById('leaders-container');
+            document.getElementById('results-count').innerText = `Topilgan kadrlar: ${data.length} nafar`;
+
+            if (data.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-gray-500 text-xs">Ma'lumot topilmadi</div>`;
+                return;
+            }
+
+            container.innerHTML = data.map(item => `
+                <div class="bg-white dark:bg-m3-cardDark rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 space-y-2">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase">${item.tuman} tumani</span>
+                            <h4 class="text-sm font-bold text-gray-900 dark:text-white mt-0.5">${item.fio}</h4>
+                            <div class="text-xs text-gray-500">${item.lavozim}</div>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600">${item.xolati}</span>
+                    </div>
+                    <div class="text-xs text-gray-600 dark:text-gray-300 font-medium">🏫 ${item.texnikum_nomi}</div>
+                    ${item.phone ? `<a href="tel:{item.phone}" class="block text-xs text-blue-500 font-semibold mt-1">📞 {item.phone}</a>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function applyFilters() {
+            const q = document.getElementById('kadrlar-search').value.toLowerCase();
+            const status = document.getElementById('filter-status').value;
+            const role = document.getElementById('filter-role').value;
+
+            currentFilteredData = LEADERS_DATA.filter(i => {
+                const matchQ = i.fio.toLowerCase().includes(q) || i.texnikum_nomi.toLowerCase().includes(q) || i.tuman.toLowerCase().includes(q);
+                const matchS = status === 'all' || i.xolati.toLowerCase().includes(status.toLowerCase());
+                const matchR = role === 'all' || i.lavozim.toLowerCase().includes(role.toLowerCase());
+                return matchQ && matchS && matchR;
+            });
+            renderLeadersList(currentFilteredData);
+        }
+
+        function initCharts() {
+            new Chart(document.getElementById('roleStatusChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Direktor', 'O\'quv', 'Yoshlar', 'Ishlab chiqarish'],
+                    datasets: [{ label: 'Soni', data: [67, 67, 67, 67], backgroundColor: '#0284c7' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            new Chart(document.getElementById('statusDoughnutChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Doimiy', 'Vaqtincha', 'Vakant'],
+                    datasets: [{ data: [218, 28, 22], backgroundColor: ['#10B981', '#F59E0B', '#EF4444'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
     </script>
 </body>
 </html>"""
