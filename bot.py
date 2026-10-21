@@ -9,7 +9,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiohttp import web
 
 # Telegram Bot Tokeningizni kiriting
-API_TOKEN = "BOT_TOKENINI_SHU_YERGA_YOZING"
+API_TOKEN = "8786802772:AAHSvzLvgCQLXt7aCl2Wk1PZj0Rg0H8uA9Q"
 
 logging.basicConfig(level=logging.INFO)
 EXCEL_FILE = "kelishuv_baza_svod_avtomatik oxirgi.xlsx"
@@ -165,68 +165,4 @@ async def web_dashboard(request):
         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-3">
             <div class="text-xs font-semibold text-blue-600 mb-1">{r[4]}</div>
             <div class="font-bold text-gray-800 text-sm mb-1">{r[0]}</div>
-            <div class="text-gray-700 text-sm font-medium">👤 {r[1]} <span class="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600">({r[5]})</span></div>
-            <div class="text-gray-500 text-xs mt-1">📌 {r[2]}</div>
-            <div class="mt-2 text-xs text-blue-500 font-semibold">📞 {r[3] if r[3] and r[3]!='nan' else 'Kiritilmagan'}</div>
-        </div>
-        """
-
-    html = f"""
-    <!DOCTYPE html>
-    <html lang="uz">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Farg'ona Texnikum HR</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="mobile-web-app-capable" content="yes">
-        <link rel="icon" href="https://img.icons8.com/color/96/administrator-male.png">
-    </head>
-    <body class="bg-gray-50 p-4 max-w-md mx-auto">
-        <div class="text-center my-4">
-            <h1 class="text-lg font-bold text-gray-800">Farg'ona Texnikum Boshqarmasi</h1>
-            <p class="text-xs text-gray-500">Rahbar kadrlar elektron paneli (Dashboard)</p>
-        </div>
-        <div class="mb-4">
-            <input type="text" id="search" placeholder="Texnikum yoki F.I.Sh bo'yicha qidirish..." class="w-full p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
-        </div>
-        <div id="list">
-            {cards_html}
-        </div>
-        <script>
-            document.getElementById('search').addEventListener('input', function(e) {{
-                let val = e.target.value.toLowerCase();
-                let cards = document.querySelectorAll('#list > div');
-                cards.forEach(card => {{
-                    let text = card.innerText.toLowerCase();
-                    card.style.display = text.includes(val) ? 'block' : 'none';
-                }});
-            }});
-        </script>
-    </body>
-    </html>
-    """
-    return web.Response(text=html, content_type='text/html')
-
-async def start_web():
-    app = web.Application()
-    app.router.add.get('/', web_dashboard)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    
-    # Render avtomatik beradigan portni o'qiydi
-    port = int(os.environ.get("PORT", 8080))
-    site = web.TCPSite(runner, '0.0.0.0', port)
-    await site.start()
-    print(f"🌐 Veb Dashboard {port}-portda ishga tushdi!")
-
-async def main():
-    setup_database()
-    await asyncio.gather(
-        dp.start_polling(bot),
-        start_web()
-    )
-
-if __name__ == "__main__":
-    asyncio.run(main())
+            <div class="text-gray-700 text-sm font-medium">👤 {r[1]} <span class="text
