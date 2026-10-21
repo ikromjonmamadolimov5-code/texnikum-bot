@@ -9,7 +9,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiohttp import web
 
 # Telegram Bot Tokeningizni kiriting
-API_TOKEN = "8786802772:AAHSvzLvgCQLXt7aCl2Wk1PZj0Rg0H8uA9Q"
+API_TOKEN = "BOT_TOKENINI_SHU_YERGA_YOZING"
 
 logging.basicConfig(level=logging.INFO)
 EXCEL_FILE = "kelishuv_baza_svod_avtomatik oxirgi.xlsx"
